@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Product Search & Filter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    input, select {
+      padding: 8px;
+      font-size: 16px;
+    }
+    .count {
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+    }
+    .product-card {
+      border: 1px solid #ccc;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      background-color: #f9f9f9;
+    }
+    .product-card img {
+      max-width: 100px;
+      height: auto;
+      margin-bottom: 10px;
+    }
+    .product-card h4 {
+      font-size: 16px;
+      margin: 10px 0;
+    }
+    .product-card p {
+      font-weight: bold;
+      color: #007bff;
+    }
+  </style>
+</head>
+<body>
+  <h2>Product Search & Filter</h2>
+
+  <div class="controls">
+    <input type="text" id="searchInput" placeholder="Search products..." />
+    <select id="categoryFilter">
+      <option value="all">All Categories</option>
+    </select>
+    <select id="sortPrice">
+      <option value="default">Sort by Price</option>
+      <option value="asc">Price: Low to High</option>
+      <option value="desc">Price: High to Low</option>
+    </select>
+  </div>
+
+  <div id="productCount" class="count"></div>
+  <div id="productGrid" class="grid"></div>
+
+  <script>
+    const searchInput = document.getElementById('searchInput');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const sortPrice = document.getElementById('sortPrice');
+    const productGrid = document.getElementById('productGrid');
+    const productCount = document.getElementById('productCount');
+
+    let allProducts = [];
+
+    async function fetchProducts() {
+      const res = await fetch('https://fakestoreapi.com/products');
+      const data = await res.json();
+      allProducts = data;
+      displayProducts(data);
+    }
+
+    async function fetchCategories() {
+      const res = await fetch('https://fakestoreapi.com/products/categories');
+      const categories = await res.json();
+      categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat;
+        option.textContent = cat[0].toUpperCase() + cat.slice(1);
+        categoryFilter.appendChild(option);
+      });
+    }
+
+    function displayProducts(products) {
+      productGrid.innerHTML = '';
+      productCount.textContent = `Showing ${products.length} product(s)`;
+
+      products.forEach(product => {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.innerHTML = `
+          <img src="${product.image}" alt="${product.title}" />
+          <h4>${product.title}</h4>
+          <p>$${product.price}</p>
+        `;
+        productGrid.appendChild(card);
+      });
+    }
+
+    function applyFilters() {
+      let filtered = [...allProducts];
+      const searchTerm = searchInput.value.toLowerCase();
+      const category = categoryFilter.value;
+      const sort = sortPrice.value;
+
+  
+      if (searchTerm) {
+        filtered = filtered.filter(p =>
+          p.title.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      if (category !== 'all') {
+        filtered = filtered.filter(p => p.category === category);
+      }
+
+      if (sort === 'asc') {
+        filtered.sort((a, b) => a.price - b.price);
+      } else if (sort === 'desc') {
+        filtered.sort((a, b) => b.price - a.price);
+      }
+
+      displayProducts(filtered);
+    }
+    searchInput.addEventListener('input', applyFilters);
+    categoryFilter.addEventListener('change', applyFilters);
+    sortPrice.addEventListener('change', applyFilters);
+
+    fetchProducts();
+    fetchCategories();
+  </script>
+</body>
+</html>
